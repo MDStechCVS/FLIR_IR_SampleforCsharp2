@@ -23,3 +23,9 @@ Windows 10 or 11
 프로그램을 실행 후, 아래와 같이 연결하고자 하는 카메라를 선택하면 영상과 온도값이 출력됩니다.
 
 <img width="718" alt="CamSelect" src="https://github.com/MDStechCVS/FLIR_IR_SampleforCsharp2/assets/142575573/4a222ace-280d-4213-bb17-e69013b6588a">
+
+## Contact
+For bugs and inquiries, please contact us through GitHub Issues or team email.
+
+
+team email : cvs_team@mdstech.co.kr
