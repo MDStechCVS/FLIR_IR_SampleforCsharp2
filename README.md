@@ -7,7 +7,7 @@ Pleora SDK가 필요합니다.
 아래 FLIR링크에서 다운받아서 설치 합니다. (로그인 필수)
 
 ### [Pleora SDK 4.1.6 Download site (FLIR Site)](https://flir.custhelp.com/app/account/fl_download_software)
-
+<img width="581" alt="Pleora SDK 다운로드" src="https://github.com/MDStechCVS/FLIR_IR_SampleforCsharp2/assets/142575573/d008e8b1-df57-4d4f-a0e3-53fca10f3052">
 
 
 소스 빌드 후 프로그램 실행 하고 아래와 같이 연결하고자 하는 카메라를 선택하면 영상과 온도값이 출력됩니다.
