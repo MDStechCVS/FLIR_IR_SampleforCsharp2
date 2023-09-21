@@ -6,6 +6,9 @@ FLIR IR 카메라 A6xx, Ax5의 영상과 최대 최소 온도값, 특정영역(R
 Pleora SDK가 필요합니다.
 아래 FLIR링크에서 다운받아서 설치 합니다. (로그인 필수)
 
+https://flir.custhelp.com/app/account/fl_download_software
+
+
 
 소스 빌드 후 프로그램 실행 하고 아래와 같이 연결하고자 하는 카메라를 선택하면 영상과 온도값이 출력됩니다.
 
