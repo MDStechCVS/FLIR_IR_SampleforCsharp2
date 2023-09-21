@@ -3,6 +3,10 @@
 
 FLIR IR 카메라 A6xx, Ax5의 영상과 최대 최소 온도값, 특정영역(ROI)의 온도값을 보여주는 예제입니다.
 
+
+This is pure example code, and optimization and exception handling are up to the user.
+
+
 ## Requrement
 FLIR IR Camera A6xx or Ax5
 
