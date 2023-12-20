@@ -1,4 +1,7 @@
-﻿using System;
+﻿#define MONO16 
+#define MONO14
+#define MONO8
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -7,9 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
 using System.Diagnostics;
-
 using PvDotNet;
 using PvGUIDotNet;
 using System.Threading;
@@ -18,23 +19,54 @@ namespace ThermalTest2
 {
     public partial class Form1 : Form
     {
-        // FLIR A6xx
-        const int mCamWidth = 640;
-        const int mCamHeight = 480;
-        const float mConvertOffsetVal = 0.01f;  // A6xx 10mK
-        //const float mConvertOffsetVal = 0.1f;   // A6xx 100mK
+        const float mOffsetVal_001 = 0.01f;
+        const float mOffsetVal_01 = 0.1f;
+        const float mOffsetVal_004 = 0.04f;
+        const float mOffsetVal_04 = 0.4f;
+
+        float mConvertOffsetVal;
+
+        int mCurWidth; 
+        int mCurHeight; 
+        // FLIR A6xx - 615, 645
+        //const int mCamWidth = 640;
+        //const int mCamHeight = 480;
+        // float mConvertOffsetVal = 0.01f;  // A6xx 10mK
+        // float mConvertOffsetVal = 0.1f;   // A6xx 100mK
 
         // FLIR Ax5
         //const int mCamWidth = 320;
         //const int mCamHeight = 256;
-        ////const float mConvertOffsetVal = 0.04f;  // A35 10mK
-        //const float mConvertOffsetVal = 0.4f;   // A35 100mK
+        //float mConvertOffsetVal = 0.04f;  // A35 10mK
+        // float mConvertOffsetVal = 0.4f;   // A35 100mK
 
+        // FLIR A50
+        //const int mCamWidth = 464;
+        //const int mCamHeight = 348;
+        ////float mConvertOffsetVal = 0.01f;  // A50 10mK
+        //float mConvertOffsetVal = 0.1f;   // A50 100mK
+
+        // FLIR A400
+        //const int mCamWidth = 320;
+        //const int mCamHeight = 240;
+
+#if MONO16
+        // MONO16이 정의되어 있을 때 실행될 코드
+        long mPixelFormat_Mono16 = 0x1100007;
+#endif
+
+#if MONO14
+        long mPixelFormat_Mono14 = 0x1100025;
+#endif
+
+#if MONO8
+        long mPixelFormat_Mono8 = 0x1080001;
+#endif 
 
         public Form1()
         {
             InitializeComponent();
- 
+
             PictureBoxIpl.SizeMode = PictureBoxSizeMode.StretchImage;
 
             maxSpot = new MeasureSpotValue(Color.Red);
@@ -43,9 +75,9 @@ namespace ThermalTest2
             // 측정 영역 박스 좌표, 크기 설정
             roiBox = new MeasureBoxValue(Color.Black, 100, 100, 100, 100);
 
-            bmp = new Bitmap(mCamWidth, mCamHeight);
+            //bmp = new Bitmap(mCamWidth, mCamHeight);
         }
-        
+
         /// <summary>
         /// Connect, configure and control a GigE Vision device
         /// </summary>
@@ -70,7 +102,7 @@ namespace ThermalTest2
         private bool bProcessing = false;
 
 
-        static int stIntCamFrameArray = mCamWidth * mCamHeight;//81920;
+        //static int stIntCamFrameArray = mCamWidth * mCamHeight;//81920;
 
         // max min icon
         MeasureSpotValue maxSpot;
@@ -102,6 +134,9 @@ namespace ThermalTest2
             PvGenString lManufacturerInfo = (PvGenString)(mDevice.Parameters.Get("DeviceManufacturerInfo"));
             PvGenEnum lPixelFormat = (PvGenEnum)(mDevice.Parameters.Get("PixelFormat"));
             PvGenEnum lTLUTMode = (PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearModeReg"));
+            PvGenInteger lWidth = (PvGenInteger)(mDevice.Parameters.Get("Width"));
+            PvGenInteger lHeight = (PvGenInteger)(mDevice.Parameters.Get("Height"));
+
             if (lTLUTMode == null)
             {
                 lTLUTMode = (PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearMode"));
@@ -118,17 +153,56 @@ namespace ThermalTest2
             string devInfo = lInfoStr;
             System.Diagnostics.Debug.WriteLine("devInfo : " + lInfoStr);
 
+            //PvGenParameter deviceinfo;
+            string modelname = mDevice.Parameters.Get("DeviceModelName").ToString();
+            //deviceinfo.ToString
+            //Console.WriteLine("deviceinfo : ", deviceinfo); 
             if (devInfo.Contains("A645"))   // FLIR Axx
             {
                 PvGenEnum lRFormat1 = (PvGenEnum)(mDevice.Parameters.Get("IRFormat"));
-                lRFormat1.ValueInt = 2;     // TemperatureLinear 10mk
+                //lPixelFormat.ValueInt = mPixelFormat_Mono14; /* PIXEL_FORMAT_MONO_14 */
+                lPixelFormat.ValueInt = mPixelFormat_Mono16; /* PIXEL_FORMAT_MONO_16 */
+
+                lWidth.Value = (640);
+                //lHeight.Value = (512);
+                lHeight.Value = (480);
+
+                //lRFormat1.ValueInt = 2;     // TemperatureLinear 10mk
+
+                if ((int)lRFormat1.ValueInt == 2)  // TemperatureLinear 10mk
+                {
+                    mConvertOffsetVal = mOffsetVal_001;
+                }
+                else if ((int)lRFormat1.ValueInt == 1)  // TemperatureLinear 100mk
+                {
+                    mConvertOffsetVal = mOffsetVal_01;
+                }
             }
-            else if (devInfo.Contains("ATAU"))  // FLIR Ax5
+            else if (devInfo.Contains("ATAU"))  // FLIR Ax5 - A65, A35 
             {
-                lPixelFormat.ValueInt = 0x01100025; /* PIXEL_FORMAT_MONO_14 */
+                lPixelFormat.ValueInt = mPixelFormat_Mono14; /* PIXEL_FORMAT_MONO_14 */
 
                 PvGenEnum lDigitalOutput = (PvGenEnum)(mDevice.Parameters.Get("DigitalOutput"));
                 PvGenEnum lCMOSBitDepth = (PvGenEnum)(mDevice.Parameters.Get("CMOSBitDepth"));
+
+                // TemperatureLinearMode 설정 확인 
+                PvGenEnum lMode = (PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearMode"));
+                if (lMode.ValueString == "On") // TemperatureLinearMode 설정되어 있는 경우 
+                {
+                    if (((PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearResolution"))).ValueString == "High")
+                    {
+                        mConvertOffsetVal = mOffsetVal_004;
+                    }
+                    else
+                    {
+                        mConvertOffsetVal = mOffsetVal_04;
+                    }
+
+                }
+
+                //FLIR Ax5의 해상도 - 다른 기종 확인 시 조건문 추가 예정 
+                lWidth.Value = (320);
+                lHeight.Value = (256);
 
                 lDigitalOutput.ValueInt = 3;
 
@@ -147,6 +221,54 @@ namespace ThermalTest2
                 }
 
             }
+            else if (devInfo.Contains("ACAM"))
+            {
+                lPixelFormat.ValueInt = mPixelFormat_Mono16; //(0x01100007);
+                PvGenEnum lRFormat1 = (PvGenEnum)(mDevice.Parameters.Get("IRFormat"));
+               
+                //IRFormat에 따른 Offset value 변경 
+                if (lRFormat1.ValueInt == 2) // TemperatureLinear 10mk
+                {
+                    mConvertOffsetVal = mOffsetVal_001;
+                }
+                else if (lRFormat1.ValueInt == 1) // TemperatureLinear 100mk
+                {
+                    mConvertOffsetVal = mOffsetVal_01;
+                }
+
+                if (modelname.Contains("A50")) // A50, A500
+                {
+                    lWidth.Value = 464;
+                    lHeight.Value = 348;
+                }
+                else if (modelname.Contains("A70")) // A70, A700
+                {
+                    lWidth.Value = 640;
+                    lHeight.Value = 480;
+                }
+                else if (modelname.Contains("A400"))
+                {
+                    lWidth.Value = 320;
+                    lHeight.Value = 240;
+                }
+
+            }
+            else if (devInfo.Contains("A320G"))
+            {
+
+                lWidth.Value = (320);
+                lHeight.Value = (246);
+
+                lPixelFormat.ValueInt = mPixelFormat_Mono16; /* PIXEL_FORMAT_MONO_16 */
+            }
+
+            if (lWidth.Value != 0 || lHeight.Value != 0)
+            {
+                mCurWidth = (int)lWidth.Value;
+                mCurHeight = (int)lHeight.Value;
+            }
+            
+            bmp = new Bitmap((int)lWidth.Value, (int)lHeight.Value);
 
         }
 
@@ -270,7 +392,7 @@ namespace ThermalTest2
                 //    getXY(a, mCamWidth, out x, out y);
 
                 //    int rVal = (int)((data[a] - minval) * 255 / (maxval - minval));
-  
+
                 //    col = Color.FromArgb(rVal, rVal, rVal);
                 //    bmp.SetPixel(x, y, col);
 
@@ -284,7 +406,7 @@ namespace ThermalTest2
                 // Rainbow colors
                 for (int a = 0; a < data.Length; a++)
                 {
-                    getXY(a, mCamWidth, out x, out y);
+                    getXY(a, mCurWidth, out x, out y);
 
                     int rVal = (int)((data[a] - minval) * 255 / (maxval - minval));
 
@@ -304,7 +426,7 @@ namespace ThermalTest2
                     {
                         col = Color.FromArgb(255, 255 - (rVal - step * 3) * 4, 0);
                     }
-                    
+
                     bmp.SetPixel(x, y, col);
 
                     // Box 내 영역의 최대 최소 온도값 체크
@@ -322,8 +444,8 @@ namespace ThermalTest2
                 int minY = 0;
 
                 // max spot get x, y;
-                getXY(maxSpot.GetPointIndex(), mCamWidth, out maxX, out maxY);
-                getXY(minSpot.GetPointIndex(), mCamWidth, out minX, out minY);
+                getXY(maxSpot.GetPointIndex(), mCurWidth, out maxX, out maxY);
+                getXY(minSpot.GetPointIndex(), mCurWidth, out minX, out minY);
 
                 maxSpot.SetXY(gr, maxX, maxY);
                 minSpot.SetXY(gr, minY, minY);
@@ -355,7 +477,7 @@ namespace ThermalTest2
                 PictureBoxIpl.Image = bmp;
                 //bmp.Save("c:\\test.jpeg", System.Drawing.Imaging.ImageFormat.Jpeg);
 
-                
+
             }
             catch (Exception e)
             {
@@ -374,9 +496,12 @@ namespace ThermalTest2
             object[] lParameters = (object[])aParameters;
             Form1 lThis = (Form1)lParameters[0];
 
+            
+
+            int stIntCamFrameArray = mCurWidth * mCurHeight;
             UInt16[] pixArr = new UInt16[stIntCamFrameArray];
 
-            for (;;)
+            for (; ; )
             {
                 PvBuffer lBuffer = null;
                 PvResult lOperationResult = new PvResult(PvResultCode.OK);
@@ -395,11 +520,11 @@ namespace ThermalTest2
                         {
                             if (lResult.IsOK)
                             {
-                                
+
                                 IntPtr ptr = (IntPtr)lBuffer.DataPointer;
-              
+
                                 byte* byteArr = (byte*)ptr.ToPointer();
-                                
+
                                 for (int i = 0; i < stIntCamFrameArray; i++)
                                 {
                                     pixArr[i] = (ushort)(byteArr[i * 2] | (byteArr[i * 2 + 1] << 8));
@@ -421,9 +546,9 @@ namespace ThermalTest2
                                         maxSpot.SetTempVal(sample);
                                     }
                                 }
-                                
+
                                 // 영상, 최대 최소, 영역 그려주기
-                                CtrlData_Receiver(pixArr, mCamWidth, mCamHeight, min16, max16);
+                                CtrlData_Receiver(pixArr, mCurWidth, mCurHeight, min16, max16);
 
                                 // We got a buffer (good or not) we must release it back
                                 mPipeline.ReleaseBuffer(lBuffer);
@@ -502,7 +627,7 @@ namespace ThermalTest2
             {
                 Close();
             }
-                        
+
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -513,7 +638,7 @@ namespace ThermalTest2
 
         private void label1_Click(object sender, EventArgs e)
         {
-            
+
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
@@ -568,7 +693,7 @@ namespace ThermalTest2
             mMax_Y = 0;
             mMin_X = 0;
             mMin_Y = 0;
-                        
+
             mMax = 0;
             mMin = 65535;
         }
@@ -623,7 +748,7 @@ namespace ThermalTest2
         {
             bool rValue = false;
 
-            if ( (mX <= nX) && ((mX + mWidth) >= nX))   // X 좌표가 범위 내에 있는지
+            if ((mX <= nX) && ((mX + mWidth) >= nX))   // X 좌표가 범위 내에 있는지
             {
                 if ((mY <= nY) && ((mY + mHeight) >= nY))   // Y 좌표가 범위 내에 있는지
                 {
@@ -656,7 +781,7 @@ namespace ThermalTest2
 
         Pen mPen = new Pen(Color.AliceBlue);
 
-        
+
         public MeasureSpotValue(Color cl)
         {
             mPen.Color = cl;
@@ -664,8 +789,8 @@ namespace ThermalTest2
 
         public void SetXY(Graphics gr, int nX, int nY)
         {
-            gr.DrawLine(mPen, nX - 10,  nY,         nX + 10,    nY      );  // 수평
-            gr.DrawLine(mPen, nX,       nY - 10,    nX,         nY + 10  );  // 수직
+            gr.DrawLine(mPen, nX - 10, nY, nX + 10, nY);  // 수평
+            gr.DrawLine(mPen, nX, nY - 10, nX, nY + 10);  // 수직
         }
 
         public void SetPointIndex(int nIndex)

@@ -1,0 +1,12 @@
+D:\bitbucket\FLIR_IR_SampleforCsharp2\SimpleExample\ThermalTest2\bin\Debug\ThermalTest2.exe.config
+D:\bitbucket\FLIR_IR_SampleforCsharp2\SimpleExample\ThermalTest2\bin\Debug\ThermalTest2.exe
+D:\bitbucket\FLIR_IR_SampleforCsharp2\SimpleExample\ThermalTest2\bin\Debug\ThermalTest2.pdb
+D:\bitbucket\FLIR_IR_SampleforCsharp2\SimpleExample\ThermalTest2\bin\Debug\PvDotNet.dll
+D:\bitbucket\FLIR_IR_SampleforCsharp2\SimpleExample\ThermalTest2\bin\Debug\PvGUIDotNet.dll
+D:\bitbucket\FLIR_IR_SampleforCsharp2\SimpleExample\ThermalTest2\obj\Debug\ThermalTest2.Form1.resources
+D:\bitbucket\FLIR_IR_SampleforCsharp2\SimpleExample\ThermalTest2\obj\Debug\ThermalTest2.Properties.Resources.resources
+D:\bitbucket\FLIR_IR_SampleforCsharp2\SimpleExample\ThermalTest2\obj\Debug\ThermalTest2.csproj.GenerateResource.cache
+D:\bitbucket\FLIR_IR_SampleforCsharp2\SimpleExample\ThermalTest2\obj\Debug\ThermalTest2.csproj.CoreCompileInputs.cache
+D:\bitbucket\FLIR_IR_SampleforCsharp2\SimpleExample\ThermalTest2\obj\Debug\ThermalTest2.csproj.CopyComplete
+D:\bitbucket\FLIR_IR_SampleforCsharp2\SimpleExample\ThermalTest2\obj\Debug\ThermalTest2.exe
+D:\bitbucket\FLIR_IR_SampleforCsharp2\SimpleExample\ThermalTest2\obj\Debug\ThermalTest2.pdb
