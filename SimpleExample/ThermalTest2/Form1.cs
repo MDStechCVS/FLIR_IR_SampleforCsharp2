@@ -25,11 +25,15 @@ namespace ThermalTest2
 {
     public partial class Form1 : Form
     {
+<<<<<<< HEAD
         // Offset Value 
+=======
+>>>>>>> f19e310e1089e4aac5db4fb5f3fdcaef515dbbf1
         const float mOffsetVal_001 = 0.01f;
         const float mOffsetVal_01 = 0.1f;
         const float mOffsetVal_004 = 0.04f;
         const float mOffsetVal_04 = 0.4f;
+<<<<<<< HEAD
 
         float mConvertOffsetVal;
 
@@ -37,6 +41,34 @@ namespace ThermalTest2
         int mCurWidth = 0; 
         int mCurHeight = 0; 
        
+=======
+
+        float mConvertOffsetVal;
+
+        int mCurWidth; 
+        int mCurHeight; 
+        // FLIR A6xx - 615, 645
+        //const int mCamWidth = 640;
+        //const int mCamHeight = 480;
+        // float mConvertOffsetVal = 0.01f;  // A6xx 10mK
+        // float mConvertOffsetVal = 0.1f;   // A6xx 100mK
+
+        // FLIR Ax5
+        //const int mCamWidth = 320;
+        //const int mCamHeight = 256;
+        //float mConvertOffsetVal = 0.04f;  // A35 10mK
+        // float mConvertOffsetVal = 0.4f;   // A35 100mK
+
+        // FLIR A50
+        //const int mCamWidth = 464;
+        //const int mCamHeight = 348;
+        ////float mConvertOffsetVal = 0.01f;  // A50 10mK
+        //float mConvertOffsetVal = 0.1f;   // A50 100mK
+
+        // FLIR A400
+        //const int mCamWidth = 320;
+        //const int mCamHeight = 240;
+>>>>>>> f19e310e1089e4aac5db4fb5f3fdcaef515dbbf1
 
 #if MONO16
         // MONO16이 정의되어 있을 때 실행될 코드
@@ -63,6 +95,10 @@ namespace ThermalTest2
             // 측정 영역 박스 좌표, 크기 설정
             roiBox = new MeasureBoxValue(Color.Black, 100, 100, 100, 100);
 
+<<<<<<< HEAD
+=======
+            //bmp = new Bitmap(mCamWidth, mCamHeight);
+>>>>>>> f19e310e1089e4aac5db4fb5f3fdcaef515dbbf1
         }
 
         /// <summary>
@@ -118,12 +154,92 @@ namespace ThermalTest2
         /// </summary>
         private void InitPleoraDevice()
         {
+<<<<<<< HEAD
             try
+=======
+            PvGenString lManufacturerInfo = (PvGenString)(mDevice.Parameters.Get("DeviceManufacturerInfo"));
+            PvGenEnum lPixelFormat = (PvGenEnum)(mDevice.Parameters.Get("PixelFormat"));
+            PvGenEnum lTLUTMode = (PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearModeReg"));
+            PvGenInteger lWidth = (PvGenInteger)(mDevice.Parameters.Get("Width"));
+            PvGenInteger lHeight = (PvGenInteger)(mDevice.Parameters.Get("Height"));
+
+            if (lTLUTMode == null)
+>>>>>>> f19e310e1089e4aac5db4fb5f3fdcaef515dbbf1
             {
                 PvGenString lManufacturerInfo = (PvGenString)(mDevice.Parameters.Get("DeviceManufacturerInfo"));
                 PvGenEnum lTLUTMode = (PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearModeReg"));
 
+<<<<<<< HEAD
                 if (lTLUTMode == null)
+=======
+            if (lTLUTMode == null)
+            {
+                //mDevice.GenParameters.SetEnumValue("IRFormat", 0);  /* IRFormat을 Radiometric으로 설정 */
+            }
+
+            string lInfoStr = "N/A";
+            lInfoStr = lManufacturerInfo.Value;
+
+            string devInfo = lInfoStr;
+            System.Diagnostics.Debug.WriteLine("devInfo : " + lInfoStr);
+
+            //PvGenParameter deviceinfo;
+            string modelname = mDevice.Parameters.Get("DeviceModelName").ToString();
+            //deviceinfo.ToString
+            //Console.WriteLine("deviceinfo : ", deviceinfo); 
+            if (devInfo.Contains("A645"))   // FLIR Axx
+            {
+                PvGenEnum lRFormat1 = (PvGenEnum)(mDevice.Parameters.Get("IRFormat"));
+                //lPixelFormat.ValueInt = mPixelFormat_Mono14; /* PIXEL_FORMAT_MONO_14 */
+                lPixelFormat.ValueInt = mPixelFormat_Mono16; /* PIXEL_FORMAT_MONO_16 */
+
+                lWidth.Value = (640);
+                //lHeight.Value = (512);
+                lHeight.Value = (480);
+
+                //lRFormat1.ValueInt = 2;     // TemperatureLinear 10mk
+
+                if ((int)lRFormat1.ValueInt == 2)  // TemperatureLinear 10mk
+                {
+                    mConvertOffsetVal = mOffsetVal_001;
+                }
+                else if ((int)lRFormat1.ValueInt == 1)  // TemperatureLinear 100mk
+                {
+                    mConvertOffsetVal = mOffsetVal_01;
+                }
+            }
+            else if (devInfo.Contains("ATAU"))  // FLIR Ax5 - A65, A35 
+            {
+                lPixelFormat.ValueInt = mPixelFormat_Mono14; /* PIXEL_FORMAT_MONO_14 */
+
+                PvGenEnum lDigitalOutput = (PvGenEnum)(mDevice.Parameters.Get("DigitalOutput"));
+                PvGenEnum lCMOSBitDepth = (PvGenEnum)(mDevice.Parameters.Get("CMOSBitDepth"));
+
+                // TemperatureLinearMode 설정 확인 
+                PvGenEnum lMode = (PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearMode"));
+                if (lMode.ValueString == "On") // TemperatureLinearMode 설정되어 있는 경우 
+                {
+                    if (((PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearResolution"))).ValueString == "High")
+                    {
+                        mConvertOffsetVal = mOffsetVal_004;
+                    }
+                    else
+                    {
+                        mConvertOffsetVal = mOffsetVal_04;
+                    }
+
+                }
+
+                //FLIR Ax5의 해상도 - 다른 기종 확인 시 조건문 추가 예정 
+                lWidth.Value = (320);
+                lHeight.Value = (256);
+
+                lDigitalOutput.ValueInt = 3;
+
+                if (lCMOSBitDepth != null && lCMOSBitDepth.ValueInt != 0)
+                    lCMOSBitDepth.ValueInt = 0; // 14 bit
+                try
+>>>>>>> f19e310e1089e4aac5db4fb5f3fdcaef515dbbf1
                 {
                     lTLUTMode = (PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearMode"));
                     //mDevice.GenParameters.SetEnumValue("IRFormat", 0);  /* IRFormat을 Radiometric으로 설정 */
@@ -260,11 +376,63 @@ namespace ThermalTest2
                 mCurWidth = (int)lWidth.Value;
                 mCurHeight = (int)lHeight.Value;
             }
+<<<<<<< HEAD
             catch (Exception e)
             {
                 System.Diagnostics.Debug.WriteLine("[CamDefine : Exception] " + e.Message);
             }
             
+=======
+            else if (devInfo.Contains("ACAM"))
+            {
+                lPixelFormat.ValueInt = mPixelFormat_Mono16; //(0x01100007);
+                PvGenEnum lRFormat1 = (PvGenEnum)(mDevice.Parameters.Get("IRFormat"));
+               
+                //IRFormat에 따른 Offset value 변경 
+                if (lRFormat1.ValueInt == 2) // TemperatureLinear 10mk
+                {
+                    mConvertOffsetVal = mOffsetVal_001;
+                }
+                else if (lRFormat1.ValueInt == 1) // TemperatureLinear 100mk
+                {
+                    mConvertOffsetVal = mOffsetVal_01;
+                }
+
+                if (modelname.Contains("A50")) // A50, A500
+                {
+                    lWidth.Value = 464;
+                    lHeight.Value = 348;
+                }
+                else if (modelname.Contains("A70")) // A70, A700
+                {
+                    lWidth.Value = 640;
+                    lHeight.Value = 480;
+                }
+                else if (modelname.Contains("A400"))
+                {
+                    lWidth.Value = 320;
+                    lHeight.Value = 240;
+                }
+
+            }
+            else if (devInfo.Contains("A320G"))
+            {
+
+                lWidth.Value = (320);
+                lHeight.Value = (246);
+
+                lPixelFormat.ValueInt = mPixelFormat_Mono16; /* PIXEL_FORMAT_MONO_16 */
+            }
+
+            if (lWidth.Value != 0 || lHeight.Value != 0)
+            {
+                mCurWidth = (int)lWidth.Value;
+                mCurHeight = (int)lHeight.Value;
+            }
+            
+            bmp = new Bitmap((int)lWidth.Value, (int)lHeight.Value);
+
+>>>>>>> f19e310e1089e4aac5db4fb5f3fdcaef515dbbf1
         }
 
         /// <summary>
@@ -888,7 +1056,11 @@ namespace ThermalTest2
         }
 
         public void SetXY(Graphics gr, int nX, int nY)
+<<<<<<< HEAD
         { 
+=======
+        {
+>>>>>>> f19e310e1089e4aac5db4fb5f3fdcaef515dbbf1
             gr.DrawLine(mPen, nX - 10, nY, nX + 10, nY);  // 수평
             gr.DrawLine(mPen, nX, nY - 10, nX, nY + 10);  // 수직
         }
