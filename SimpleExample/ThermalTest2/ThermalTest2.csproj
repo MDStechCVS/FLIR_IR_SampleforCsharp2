@@ -9,9 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ThermalTest2</RootNamespace>
     <AssemblyName>ThermalTest2</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -35,6 +36,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
     <Reference Include="PvDotNet, Version=4.1.5.3645, Culture=neutral, PublicKeyToken=666697f16d0ae86b, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\ExtDll\PvDotNet.dll</HintPath>
@@ -43,8 +46,27 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\ExtDll\PvGUIDotNet.dll</HintPath>
     </Reference>
+    <Reference Include="SpinnakerNETGUId_v140.resources">
+      <HintPath>..\ExtDll\SpinnakerNETGUId_v140.resources.dll</HintPath>
+    </Reference>
+    <Reference Include="SpinnakerNETGUI_v140, Version=2.4.0.144, Culture=neutral, PublicKeyToken=1ff91aff28cdd2ef, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\ExtDll\SpinnakerNETGUI_v140.dll</HintPath>
+    </Reference>
+    <Reference Include="SpinnakerNETGUI_v140.resources, Version=2.4.0.144, Culture=en-US, PublicKeyToken=1ff91aff28cdd2ef, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\ExtDll\SpinnakerNETGUI_v140.resources.dll</HintPath>
+    </Reference>
+    <Reference Include="SpinnakerNET_v140, Version=2.4.0.144, Culture=neutral, PublicKeyToken=e3ed2bf1f221d241, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\ExtDll\SpinnakerNET_v140.dll</HintPath>
+    </Reference>
+    <Reference Include="SpinView_WPF.resources">
+      <HintPath>..\ExtDll\SpinView_WPF.resources.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Windows" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -54,6 +76,7 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Form1.cs">
@@ -75,6 +98,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -88,6 +112,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="resources\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,4 +1,7 @@
-﻿using System;
+﻿#define MONO16 
+#define MONO14
+#define MONO8
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -7,34 +10,51 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
 using System.Diagnostics;
-
 using PvDotNet;
 using PvGUIDotNet;
 using System.Threading;
+using Spinnaker;
+using SpinnakerNET.GenApi;
+using SpinnakerNET;
+using SpinnakerNET.GUI;
+using System.Windows.Controls; 
+
 
 namespace ThermalTest2
 {
     public partial class Form1 : Form
     {
-        // FLIR A6xx
-        const int mCamWidth = 640;
-        const int mCamHeight = 480;
-        const float mConvertOffsetVal = 0.01f;  // A6xx 10mK
-        //const float mConvertOffsetVal = 0.1f;   // A6xx 100mK
+        // Offset Value 
+        const float mOffsetVal_001 = 0.01f;
+        const float mOffsetVal_01 = 0.1f;
+        const float mOffsetVal_004 = 0.04f;
+        const float mOffsetVal_04 = 0.4f;
 
-        // FLIR Ax5
-        //const int mCamWidth = 320;
-        //const int mCamHeight = 256;
-        ////const float mConvertOffsetVal = 0.04f;  // A35 10mK
-        //const float mConvertOffsetVal = 0.4f;   // A35 100mK
+        float mConvertOffsetVal;
 
+        // Camera Width, Height 
+        int mCurWidth = 0; 
+        int mCurHeight = 0; 
+       
+
+#if MONO16
+        // MONO16이 정의되어 있을 때 실행될 코드
+        long mPixelFormat_Mono16 = 0x1100007;
+#endif
+
+#if MONO14
+        long mPixelFormat_Mono14 = 0x1100025;
+#endif
+
+#if MONO8
+        long mPixelFormat_Mono8 = 0x1080001;
+#endif 
 
         public Form1()
         {
             InitializeComponent();
- 
+
             PictureBoxIpl.SizeMode = PictureBoxSizeMode.StretchImage;
 
             maxSpot = new MeasureSpotValue(Color.Red);
@@ -43,9 +63,8 @@ namespace ThermalTest2
             // 측정 영역 박스 좌표, 크기 설정
             roiBox = new MeasureBoxValue(Color.Black, 100, 100, 100, 100);
 
-            bmp = new Bitmap(mCamWidth, mCamHeight);
         }
-        
+
         /// <summary>
         /// Connect, configure and control a GigE Vision device
         /// </summary>
@@ -70,7 +89,7 @@ namespace ThermalTest2
         private bool bProcessing = false;
 
 
-        static int stIntCamFrameArray = mCamWidth * mCamHeight;//81920;
+        //static int stIntCamFrameArray = mCamWidth * mCamHeight;//81920;
 
         // max min icon
         MeasureSpotValue maxSpot;
@@ -99,55 +118,153 @@ namespace ThermalTest2
         /// </summary>
         private void InitPleoraDevice()
         {
-            PvGenString lManufacturerInfo = (PvGenString)(mDevice.Parameters.Get("DeviceManufacturerInfo"));
-            PvGenEnum lPixelFormat = (PvGenEnum)(mDevice.Parameters.Get("PixelFormat"));
-            PvGenEnum lTLUTMode = (PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearModeReg"));
-            if (lTLUTMode == null)
+            try
             {
-                lTLUTMode = (PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearMode"));
-            }
+                PvGenString lManufacturerInfo = (PvGenString)(mDevice.Parameters.Get("DeviceManufacturerInfo"));
+                PvGenEnum lTLUTMode = (PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearModeReg"));
 
-            if (lTLUTMode == null)
-            {
-                //mDevice.GenParameters.SetEnumValue("IRFormat", 0);  /* IRFormat을 Radiometric으로 설정 */
-            }
-
-            string lInfoStr = "N/A";
-            lInfoStr = lManufacturerInfo.Value;
-
-            string devInfo = lInfoStr;
-            System.Diagnostics.Debug.WriteLine("devInfo : " + lInfoStr);
-
-            if (devInfo.Contains("A645"))   // FLIR Axx
-            {
-                PvGenEnum lRFormat1 = (PvGenEnum)(mDevice.Parameters.Get("IRFormat"));
-                lRFormat1.ValueInt = 2;     // TemperatureLinear 10mk
-            }
-            else if (devInfo.Contains("ATAU"))  // FLIR Ax5
-            {
-                lPixelFormat.ValueInt = 0x01100025; /* PIXEL_FORMAT_MONO_14 */
-
-                PvGenEnum lDigitalOutput = (PvGenEnum)(mDevice.Parameters.Get("DigitalOutput"));
-                PvGenEnum lCMOSBitDepth = (PvGenEnum)(mDevice.Parameters.Get("CMOSBitDepth"));
-
-                lDigitalOutput.ValueInt = 3;
-
-                if (lCMOSBitDepth != null && lCMOSBitDepth.ValueInt != 0)
-                    lCMOSBitDepth.ValueInt = 0; // 14 bit
-                try
+                if (lTLUTMode == null)
                 {
-                    if (lTLUTMode != null)
+                    lTLUTMode = (PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearMode"));
+                    //mDevice.GenParameters.SetEnumValue("IRFormat", 0);  /* IRFormat을 Radiometric으로 설정 */
+                }
+
+                string lInfoStr = "N/A";
+                lInfoStr = lManufacturerInfo.Value;
+
+                //string devInfo = lInfoStr;
+                System.Diagnostics.Debug.WriteLine("devInfo : " + lInfoStr);
+
+                ////PvGenParameter deviceinfo;
+                //string modelname = mDevice.Parameters.Get("DeviceModelName").ToString();
+
+                // Camera Device Model Name, Width, height, Offset define 
+                CamDefine(lInfoStr);
+
+                if (mCurWidth != 0 && mCurHeight != 0)
+                {
+                    bmp = new Bitmap(mCurWidth, mCurHeight);
+                }
+            }
+            catch (Exception e)
+            {
+                System.Diagnostics.Debug.WriteLine("[InitPleoraDevice : Exception] " + e.Message);
+            }
+        }
+        /// <summary>
+        /// Camera Device Model Name, Width, height, Offset define 
+        /// </summary>
+        /// <param name="devInfo"></param>
+        private void CamDefine(string devInfo)
+        {
+            try
+            {
+                //PvGenParameter deviceinfo;
+                PvGenEnum lPixelFormat = (PvGenEnum)(mDevice.Parameters.Get("PixelFormat"));
+                PvGenInteger lWidth = (PvGenInteger)(mDevice.Parameters.Get("Width"));
+                PvGenInteger lHeight = (PvGenInteger)(mDevice.Parameters.Get("Height"));
+                string modelname = mDevice.Parameters.Get("DeviceModelName").ToString();
+
+                if (devInfo.Contains("A645"))   // FLIR Axx
+                {
+                    PvGenEnum lRFormat1 = (PvGenEnum)(mDevice.Parameters.Get("IRFormat"));
+                    lPixelFormat.ValueInt = mPixelFormat_Mono16; /* PIXEL_FORMAT_MONO_16 */
+
+                    lWidth.Value = (640);
+                    lHeight.Value = (480);
+
+                    //lRFormat1.ValueInt
+                    // 0 -> Radiometric
+                    // 1 -> TemperatureLinear 100mk
+                    // 2 -> TemperatureLinear 10mk
+
+                    if ((int)lRFormat1.ValueInt == 2) 
                     {
-                        lTLUTMode.ValueInt = 1; // Turn it on
+                        mConvertOffsetVal = mOffsetVal_001;
+                    }
+                    else if ((int)lRFormat1.ValueInt == 1) 
+                    {
+                        mConvertOffsetVal = mOffsetVal_01;
                     }
                 }
-                catch (System.Exception ex)
+                else if (devInfo.Contains("ATAU"))  // FLIR Ax5 - A65, A35 
                 {
-                    System.Diagnostics.Debug.WriteLine(ex.Message);
+                    lPixelFormat.ValueInt = mPixelFormat_Mono14; /* PIXEL_FORMAT_MONO_14 */
+
+                    PvGenEnum lDigitalOutput = (PvGenEnum)(mDevice.Parameters.Get("DigitalOutput"));
+                    PvGenEnum lCMOSBitDepth = (PvGenEnum)(mDevice.Parameters.Get("CMOSBitDepth"));
+
+                    //FLIR Ax5의 해상도 - 다른 기종 확인 시 조건문 추가 예정 
+                    lWidth.Value = (320);
+                    lHeight.Value = (256);
+
+                    // TemperatureLinearMode 설정 확인 
+                    PvGenEnum lMode = (PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearMode"));
+                    if (lMode.ValueString == "On") // TemperatureLinearMode 설정되어 있는 경우 
+                    {
+                        if (((PvGenEnum)(mDevice.Parameters.Get("TemperatureLinearResolution"))).ValueString == "High")
+                        {
+                            mConvertOffsetVal = mOffsetVal_004;
+                        }
+                        else
+                        {
+                            mConvertOffsetVal = mOffsetVal_04;
+                        }
+                    }
+
+                    lDigitalOutput.ValueInt = 3;
+
+                    if (lCMOSBitDepth != null && lCMOSBitDepth.ValueInt != 0)
+                        lCMOSBitDepth.ValueInt = 0; // 14 bit
+
+                }
+                else if (devInfo.Contains("ACAM"))
+                {
+                    lPixelFormat.ValueInt = mPixelFormat_Mono16; //(0x01100007);
+                    PvGenEnum lRFormat1 = (PvGenEnum)(mDevice.Parameters.Get("IRFormat"));
+
+                    //IRFormat에 따른 Offset value 변경 
+                    if (lRFormat1.ValueInt == 2) // TemperatureLinear 10mk
+                    {
+                        mConvertOffsetVal = mOffsetVal_001;
+                    }
+                    else if (lRFormat1.ValueInt == 1) // TemperatureLinear 100mk
+                    {
+                        mConvertOffsetVal = mOffsetVal_01;
+                    }
+
+                    if (modelname.Contains("A50")) // A50, A500
+                    {
+                        lWidth.Value = 464;
+                        lHeight.Value = 348;
+                    }
+                    else if (modelname.Contains("A70")) // A70, A700
+                    {
+                        lWidth.Value = 640;
+                        lHeight.Value = 480;
+                    }
+                    else if (modelname.Contains("A400"))
+                    {
+                        lWidth.Value = 320;
+                        lHeight.Value = 240;
+                    }
+
+                }
+                else if (devInfo.Contains("A320G"))
+                {
+
+                    lWidth.Value = (320);
+                    lHeight.Value = (246);
                 }
 
+                mCurWidth = (int)lWidth.Value;
+                mCurHeight = (int)lHeight.Value;
             }
-
+            catch (Exception e)
+            {
+                System.Diagnostics.Debug.WriteLine("[CamDefine : Exception] " + e.Message);
+            }
+            
         }
 
         /// <summary>
@@ -270,7 +387,7 @@ namespace ThermalTest2
                 //    getXY(a, mCamWidth, out x, out y);
 
                 //    int rVal = (int)((data[a] - minval) * 255 / (maxval - minval));
-  
+
                 //    col = Color.FromArgb(rVal, rVal, rVal);
                 //    bmp.SetPixel(x, y, col);
 
@@ -284,7 +401,7 @@ namespace ThermalTest2
                 // Rainbow colors
                 for (int a = 0; a < data.Length; a++)
                 {
-                    getXY(a, mCamWidth, out x, out y);
+                    getXY(a, mCurWidth, out x, out y);
 
                     int rVal = (int)((data[a] - minval) * 255 / (maxval - minval));
 
@@ -304,7 +421,7 @@ namespace ThermalTest2
                     {
                         col = Color.FromArgb(255, 255 - (rVal - step * 3) * 4, 0);
                     }
-                    
+
                     bmp.SetPixel(x, y, col);
 
                     // Box 내 영역의 최대 최소 온도값 체크
@@ -322,8 +439,8 @@ namespace ThermalTest2
                 int minY = 0;
 
                 // max spot get x, y;
-                getXY(maxSpot.GetPointIndex(), mCamWidth, out maxX, out maxY);
-                getXY(minSpot.GetPointIndex(), mCamWidth, out minX, out minY);
+                getXY(maxSpot.GetPointIndex(), mCurWidth, out maxX, out maxY);
+                getXY(minSpot.GetPointIndex(), mCurWidth, out minX, out minY);
 
                 maxSpot.SetXY(gr, maxX, maxY);
                 minSpot.SetXY(gr, minY, minY);
@@ -355,7 +472,7 @@ namespace ThermalTest2
                 PictureBoxIpl.Image = bmp;
                 //bmp.Save("c:\\test.jpeg", System.Drawing.Imaging.ImageFormat.Jpeg);
 
-                
+
             }
             catch (Exception e)
             {
@@ -374,9 +491,12 @@ namespace ThermalTest2
             object[] lParameters = (object[])aParameters;
             Form1 lThis = (Form1)lParameters[0];
 
+            
+
+            int stIntCamFrameArray = mCurWidth * mCurHeight;
             UInt16[] pixArr = new UInt16[stIntCamFrameArray];
 
-            for (;;)
+            for (; ; )
             {
                 PvBuffer lBuffer = null;
                 PvResult lOperationResult = new PvResult(PvResultCode.OK);
@@ -395,11 +515,11 @@ namespace ThermalTest2
                         {
                             if (lResult.IsOK)
                             {
-                                
+
                                 IntPtr ptr = (IntPtr)lBuffer.DataPointer;
-              
+
                                 byte* byteArr = (byte*)ptr.ToPointer();
-                                
+
                                 for (int i = 0; i < stIntCamFrameArray; i++)
                                 {
                                     pixArr[i] = (ushort)(byteArr[i * 2] | (byteArr[i * 2 + 1] << 8));
@@ -421,9 +541,9 @@ namespace ThermalTest2
                                         maxSpot.SetTempVal(sample);
                                     }
                                 }
-                                
+
                                 // 영상, 최대 최소, 영역 그려주기
-                                CtrlData_Receiver(pixArr, mCamWidth, mCamHeight, min16, max16);
+                                CtrlData_Receiver(pixArr, mCurWidth, mCurHeight, min16, max16);
 
                                 // We got a buffer (good or not) we must release it back
                                 mPipeline.ReleaseBuffer(lBuffer);
@@ -455,11 +575,62 @@ namespace ThermalTest2
             // Start acquisition on the device
             mDevice.Parameters.ExecuteCommand("AcquisitionStart");
         }
+        protected string lastIpAddr = "";
+        private void Spinnaker_ConnectControls(object sender, CameraSelectionWindow.DeviceEventArgs args)
+        {
+            //Disconnect();
 
+            // 선택된 카메라 접속
+            long ipAddr = args.Camera.GevCurrentIPAddress;
+
+            lastIpAddr = GetIPAddressFromLongValue(ipAddr);
+
+                System.Diagnostics.Debug.WriteLine(String.Format("get ipaddr {0}", lastIpAddr));
+
+            // 팝업창 닫기 - 성공 실패 여부와 상관없이 카메라 선택창에서 선택이 이루어졌으면 닫아야함.
+            CameraSelectionWindow PopupCameraList = (CameraSelectionWindow)sender;
+            PopupCameraList.Close(); 
+
+        }
+        private String GetIPAddressFromLongValue(long longValue)
+        {
+            String rValue = String.Empty;
+
+            long maskFF4 = 0xFF000000;
+            long maskFF3 = 0x00FF0000;
+            long maskFF2 = 0x0000FF00;
+            long maskFF1 = 0x000000FF;
+
+            // IP 주소 첫번째
+            maskFF4 = maskFF4 & longValue;
+            maskFF4 >>= 24;
+
+            // IP 주소 두번째
+            maskFF3 = maskFF3 & longValue;
+            maskFF3 >>= 16;
+
+            // IP 주소 세번째
+            maskFF2 = maskFF2 & longValue;
+            maskFF2 >>= 8;
+
+            // IP 주소 네번째
+            maskFF1 = maskFF1 & longValue;
+
+            rValue = String.Format(maskFF4.ToString() + '.' +
+                                    maskFF3.ToString() + '.' +
+                                    maskFF2.ToString() + '.' +
+                                    maskFF1.ToString());
+
+            return rValue;
+        }
         private void button1_Click(object sender, EventArgs e)
         {
+            // Pleora 
             // Pop device finder, let user select a device.
             PvDeviceFinderForm lForm = new PvDeviceFinderForm();
+
+          
+
             if ((lForm.ShowDialog() == DialogResult.OK) && (lForm.Selected != null))
             {
                 try
@@ -502,7 +673,7 @@ namespace ThermalTest2
             {
                 Close();
             }
-                        
+
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -513,7 +684,7 @@ namespace ThermalTest2
 
         private void label1_Click(object sender, EventArgs e)
         {
-            
+
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e)
@@ -523,6 +694,60 @@ namespace ThermalTest2
                 mThread.Abort();
             }
         }
+        /// <summary>
+        /// Connect, configure and control a GigE Vision device
+        /// </summary>
+        private IManagedCamera m_pAcqDevice = null;
+        private void button3_Click(object sender, EventArgs e)
+        {
+            // Spinnaker 연결 방식 
+            CameraSelectionWindow CamSelectForm = new CameraSelectionWindow();
+            CamSelectForm.OnDeviceClicked += Spinnaker_ConnectControls;
+
+            //if ((CamSelectForm.ShowDialog() == true)
+                
+            CamSelectForm.ShowModal(true);
+
+            if (m_pAcqDevice != null)
+            {
+                ConnectProcess(m_pAcqDevice);
+
+                //ret = eCamErrors.OK;
+
+                String logValue = String.Format("Connect(out string IpAddress) is OK - {0}", lastIpAddr);
+                System.Diagnostics.Debug.WriteLine(logValue);
+            }
+
+
+        }
+        private void ConnectProcess(IManagedCamera cam)
+        {
+            //// LUT 업데이트를 위한 콜백 함수 등록
+            INodeMap nodeMap = cam.GetNodeMap();
+
+            //categoryParam.Updated += new NodeEventHandler(OnParamUpdate);
+
+            SpinnakerStartingStream();
+
+            //OnLutUpdated();     // 기존 위치... EV_CONNECTED 다음에 수행하면... 카메라 parameter 값을 받아오는데 문제가 있음
+        }
+        private void SpinnakerStartingStream()
+        {
+            // Start display thread
+            mThreadStart();
+
+           //StartAcquisition();
+        }
+        private void mThreadStart()
+        {
+            mThread = new Thread(new ParameterizedThreadStart(ThreadProc));
+            //SpinnakerSdkCamControl lP1 = this;
+            //object[] lParameters = new object[] { lP1 };
+            //isRunning = true;
+            //mThread.IsBackground = true;
+            mThread.Start();
+        }
+
     }
 
     // 측정 영역 Box
@@ -568,7 +793,7 @@ namespace ThermalTest2
             mMax_Y = 0;
             mMin_X = 0;
             mMin_Y = 0;
-                        
+
             mMax = 0;
             mMin = 65535;
         }
@@ -623,7 +848,7 @@ namespace ThermalTest2
         {
             bool rValue = false;
 
-            if ( (mX <= nX) && ((mX + mWidth) >= nX))   // X 좌표가 범위 내에 있는지
+            if ((mX <= nX) && ((mX + mWidth) >= nX))   // X 좌표가 범위 내에 있는지
             {
                 if ((mY <= nY) && ((mY + mHeight) >= nY))   // Y 좌표가 범위 내에 있는지
                 {
@@ -656,16 +881,16 @@ namespace ThermalTest2
 
         Pen mPen = new Pen(Color.AliceBlue);
 
-        
+
         public MeasureSpotValue(Color cl)
         {
             mPen.Color = cl;
         }
 
         public void SetXY(Graphics gr, int nX, int nY)
-        {
-            gr.DrawLine(mPen, nX - 10,  nY,         nX + 10,    nY      );  // 수평
-            gr.DrawLine(mPen, nX,       nY - 10,    nX,         nY + 10  );  // 수직
+        { 
+            gr.DrawLine(mPen, nX - 10, nY, nX + 10, nY);  // 수평
+            gr.DrawLine(mPen, nX, nY - 10, nX, nY + 10);  // 수직
         }
 
         public void SetPointIndex(int nIndex)
