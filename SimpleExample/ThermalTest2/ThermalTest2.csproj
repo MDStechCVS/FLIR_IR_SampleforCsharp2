@@ -35,6 +35,28 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -45,24 +67,6 @@
     <Reference Include="PvGUIDotNet, Version=4.1.6.3809, Culture=neutral, PublicKeyToken=666697f16d0ae86b, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\ExtDll\PvGUIDotNet.dll</HintPath>
-    </Reference>
-    <Reference Include="SpinnakerNETGUId_v140.resources">
-      <HintPath>..\ExtDll\SpinnakerNETGUId_v140.resources.dll</HintPath>
-    </Reference>
-    <Reference Include="SpinnakerNETGUI_v140, Version=2.4.0.144, Culture=neutral, PublicKeyToken=1ff91aff28cdd2ef, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\ExtDll\SpinnakerNETGUI_v140.dll</HintPath>
-    </Reference>
-    <Reference Include="SpinnakerNETGUI_v140.resources, Version=2.4.0.144, Culture=en-US, PublicKeyToken=1ff91aff28cdd2ef, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\ExtDll\SpinnakerNETGUI_v140.resources.dll</HintPath>
-    </Reference>
-    <Reference Include="SpinnakerNET_v140, Version=2.4.0.144, Culture=neutral, PublicKeyToken=e3ed2bf1f221d241, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\ExtDll\SpinnakerNET_v140.dll</HintPath>
-    </Reference>
-    <Reference Include="SpinView_WPF.resources">
-      <HintPath>..\ExtDll\SpinView_WPF.resources.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
